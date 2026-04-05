@@ -1,0 +1,60 @@
+# Configurações do servidor
+server:
+  port: 8080
+
+spring:
+  application:
+    # Nome da aplicação — usado em logs e monitorização
+    name: buildflow-api
+
+  # Configurações da base de dados PostgreSQL
+  datasource:
+    # URL de ligação — em produção isto vem de variável de ambiente
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/buildflow}
+    username: ${DATABASE_USERNAME:buildflow_user}
+    password: ${DATABASE_PASSWORD:buildflow123}
+    driver-class-name: org.postgresql.Driver
+
+  # Configurações do JPA / Hibernate
+  jpa:
+    hibernate:
+      # validate = só verifica se as tabelas existem, não as cria nem altera
+      # O Flyway é quem cria e altera as tabelas
+      ddl-auto: validate
+    # Mostra as queries SQL no terminal — útil em desenvolvimento
+    show-sql: true
+    properties:
+      hibernate:
+        # Formata as queries SQL para ficarem mais legíveis no terminal
+        format_sql: true
+        # Dialeto do PostgreSQL — diz ao Hibernate que BD estamos a usar
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Configurações do Flyway — controlo de versão da base de dados
+  flyway:
+    # Ativa o Flyway
+    enabled: true
+    # Pasta onde ficam os scripts de migração
+    locations: classpath:db/migration
+    # Schema da base de dados
+    schemas: public
+
+# Configurações específicas para desenvolvimento
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    # Em desenvolvimento mostra as queries
+    show-sql: true
+
+# Configurações específicas para produção
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    # Em produção esconde as queries por segurança
+    show-sql: false
