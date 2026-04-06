@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { z } from 'zod';
 import { useAuthStore } from '../store/useAuthStore';
@@ -21,9 +21,11 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const login = useAuthStore((state) => state.login);
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const successMessage = (location.state as any)?.successMessage ?? '';
 
   const {
     register,
@@ -60,6 +62,10 @@ export default function Login() {
           <p style={styles.subtitle}>Sign in to your account</p>
         </div>
 
+        {successMessage && (
+          <div style={styles.successMessage}>{successMessage}</div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} style={styles.form}>
           <div style={styles.formGroup}>
             <label>Email</label>
@@ -83,6 +89,11 @@ export default function Login() {
             {errors.password && (
               <span className="error-message">{errors.password.message}</span>
             )}
+            <div style={{ textAlign: 'right', marginTop: '4px' }}>
+              <Link to="/forgot-password" style={styles.forgotLink}>
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           {error && (
@@ -153,5 +164,20 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     color: 'var(--text-secondary)',
     marginTop: '8px',
+  },
+  forgotLink: {
+    fontSize: '13px',
+    color: 'var(--accent)',
+    textDecoration: 'none',
+  },
+  successMessage: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    border: '1px solid rgba(34, 197, 94, 0.3)',
+    borderRadius: '8px',
+    padding: '12px 16px',
+    color: '#22c55e',
+    fontSize: '14px',
+    textAlign: 'center',
+    marginBottom: '16px',
   },
 };

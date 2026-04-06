@@ -41,7 +41,15 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET:buildflow-secret-key-muito-longa-para-ser-segura-256-bits}
-  expiration: ${JWT_EXPIRATION:3600000}    
+  expiration: ${JWT_EXPIRATION:3600000}
+
+resend:
+  api-key: ${RESEND_API_KEY:re_cfLHG8gV_x2M7156AKBLNh42mF2a9z1JW}
+  from-email: ${RESEND_FROM_EMAIL:onboarding@resend.dev}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+
 # Configurações específicas para desenvolvimento
 ---
 spring:
