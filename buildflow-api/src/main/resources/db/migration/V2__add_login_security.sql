@@ -1,0 +1,4 @@
+-- Add login security fields to users table
+ALTER TABLE users
+    ADD COLUMN failed_attempts INT NOT NULL DEFAULT 0,
+    ADD COLUMN locked_until TIMESTAMP NULL;

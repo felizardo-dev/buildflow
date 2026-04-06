@@ -1,6 +1,7 @@
 package com.buildflow.controller;
 
 import com.buildflow.dto.AuthResponse;
+import com.buildflow.dto.LoginRequest;
 import com.buildflow.dto.RegisterRequest;
 import com.buildflow.service.AuthService;
 import jakarta.validation.Valid;
@@ -22,5 +23,11 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(authService.register(request));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 }
