@@ -39,6 +39,9 @@ spring:
     # Schema da base de dados
     schemas: public
 
+jwt:
+  secret: ${JWT_SECRET:buildflow-secret-key-muito-longa-para-ser-segura-256-bits}
+  expiration: ${JWT_EXPIRATION:3600000}    
 # Configurações específicas para desenvolvimento
 ---
 spring:
@@ -58,3 +61,4 @@ spring:
   jpa:
     # Em produção esconde as queries por segurança
     show-sql: false
+
