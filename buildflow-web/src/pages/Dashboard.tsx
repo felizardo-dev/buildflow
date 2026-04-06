@@ -17,9 +17,14 @@ export default function Dashboard() {
 
       <header style={styles.header}>
         <h1 style={styles.logo}>BuildFlow</h1>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
-        </button>
+        <div style={styles.headerActions}>
+          <button onClick={() => navigate('/settings')} style={styles.settingsButton}>
+            Settings
+          </button>
+          <button onClick={handleLogout} style={styles.logoutButton}>
+            Logout
+          </button>
+        </div>
       </header>
 
       <main style={styles.main}>
@@ -82,6 +87,20 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '24px',
     fontWeight: '600',
     color: 'var(--accent)',
+  },
+  headerActions: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center',
+  },
+  settingsButton: {
+    padding: '8px 16px',
+    fontSize: '14px',
+    background: 'transparent',
+    border: '1px solid var(--border)',
+    borderRadius: '6px',
+    color: 'var(--text-primary)',
+    cursor: 'pointer',
   },
   logoutButton: {
     padding: '8px 16px',

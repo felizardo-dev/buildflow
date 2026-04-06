@@ -44,7 +44,7 @@ jwt:
   expiration: ${JWT_EXPIRATION:3600000}
 
 resend:
-  api-key: ${RESEND_API_KEY:re_cfLHG8gV_x2M7156AKBLNh42mF2a9z1JW}
+  api-key: ${RESEND_API_KEY:}
   from-email: ${RESEND_FROM_EMAIL:onboarding@resend.dev}
 
 app:
