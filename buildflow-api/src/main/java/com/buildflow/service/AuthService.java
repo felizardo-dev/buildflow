@@ -1,14 +1,15 @@
 package com.buildflow.service;
 
-import com.buildflow.dto.AuthResponse;
-import com.buildflow.dto.LoginRequest;
-import com.buildflow.dto.RegisterRequest;
+import com.buildflow.dto.*;
 import com.buildflow.entity.Company;
+import com.buildflow.entity.PasswordResetToken;
 import com.buildflow.entity.User;
 import com.buildflow.repository.CompanyRepository;
+import com.buildflow.repository.PasswordResetTokenRepository;
 import com.buildflow.repository.UserRepository;
 import com.buildflow.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,11 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -92,6 +99,49 @@ public class AuthService {
         String token = jwtService.generateToken(user.getEmail());
 
         return buildAuthResponse(token, user, user.getCompany());
+    }
+
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            String token = UUID.randomUUID().toString();
+
+            PasswordResetToken resetToken = PasswordResetToken.builder()
+                    .user(user)
+                    .token(token)
+                    .expiresAt(LocalDateTime.now().plusMinutes(30))
+                    .used(false)
+                    .build();
+            passwordResetTokenRepository.save(resetToken);
+
+            String resetLink = frontendUrl + "/reset-password?token=" + token;
+            emailService.sendPasswordRecoveryEmail(user.getEmail(), resetLink);
+        });
+        // Always return success — do not reveal whether the email exists
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository
+                .findByToken(request.getToken())
+                .orElseThrow(() -> new RuntimeException("Invalid or expired token"));
+
+        if (resetToken.isUsed()) {
+            throw new RuntimeException("Token has already been used");
+        }
+
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token has expired");
+        }
+
+        User user = resetToken.getUser();
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setFailedAttempts(0);
+        user.setLockedUntil(null);
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
     }
 
     private boolean isAccountLocked(User user) {
