@@ -46,6 +46,13 @@ export default function Dashboard() {
           </div>
         </div>
 
+        <div style={styles.sectionHeader}>
+          <h3 style={styles.sectionTitle}>Projects</h3>
+          <button onClick={() => navigate('/projects/new')} style={styles.newProjectButton}>
+            + New Project
+          </button>
+        </div>
+
         <div style={styles.grid}>
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>Projects</h3>
@@ -132,6 +139,27 @@ const styles: Record<string, React.CSSProperties> = {
   infoItem: {
     fontSize: '16px',
     color: 'var(--text-secondary)',
+  },
+  sectionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
+  },
+  sectionTitle: {
+    fontSize: '20px',
+    fontWeight: '600',
+    color: 'var(--text-primary)',
+  },
+  newProjectButton: {
+    padding: '10px 20px',
+    fontSize: '14px',
+    fontWeight: '600',
+    backgroundColor: '#E8863A',
+    border: 'none',
+    borderRadius: '6px',
+    color: '#fff',
+    cursor: 'pointer',
   },
   grid: {
     display: 'grid',
