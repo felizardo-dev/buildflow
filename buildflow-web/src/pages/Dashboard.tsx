@@ -1,10 +1,51 @@
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore';
 import ThemeToggle from '../components/ThemeToggle';
+import api from '../lib/axios';
+
+interface ProjectResponse {
+  id: string;
+  name: string;
+  address: string;
+  status: string;
+  deadline: string;
+  progress: number;
+  memberCount: number;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  PLANNING: '#3B82F6',
+  IN_PROGRESS: '#E8863A',
+  COMPLETED: '#22C55E',
+  SUSPENDED: '#6B7280',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  PLANNING: 'Planning',
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+  SUSPENDED: 'Suspended',
+};
+
+function isOverdue(deadline: string, status: string): boolean {
+  if (status === 'COMPLETED' || status === 'SUSPENDED') return false;
+  return new Date(deadline) < new Date();
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+
+  const { data: allProjects = [], isLoading } = useQuery<ProjectResponse[]>({
+    queryKey: ['projects', '', 'createdAt'],
+    queryFn: async () => {
+      const res = await api.get('/projects', { params: { sortBy: 'createdAt' } });
+      return res.data;
+    },
+  });
+
+  const recentProjects = allProjects.slice(0, 3);
 
   const handleLogout = () => {
     logout();
@@ -46,17 +87,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div style={styles.sectionHeader}>
-          <h3 style={styles.sectionTitle}>Projects</h3>
-          <button onClick={() => navigate('/projects/new')} style={styles.newProjectButton}>
-            + New Project
-          </button>
-        </div>
-
         <div style={styles.grid}>
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>Projects</h3>
-            <p style={styles.cardValue}>0</p>
+            <p style={styles.cardValue}>{isLoading ? '—' : allProjects.length}</p>
             <p style={styles.cardSubtitle}>Active projects</p>
           </div>
 
@@ -72,6 +106,93 @@ export default function Dashboard() {
             <p style={styles.cardSubtitle}>Pending tasks</p>
           </div>
         </div>
+
+        <div style={styles.sectionHeader}>
+          <h3 style={styles.sectionTitle}>Recent Projects</h3>
+          <div style={styles.sectionActions}>
+            <span
+              onClick={() => navigate('/projects')}
+              style={styles.viewAllLink}
+              role="button"
+            >
+              View all projects →
+            </span>
+            <button onClick={() => navigate('/projects/new')} style={styles.newProjectButton}>
+              + New Project
+            </button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <p style={styles.loadingText}>Loading projects...</p>
+        ) : recentProjects.length === 0 ? (
+          <div style={styles.emptyState}>
+            <p style={styles.emptyText}>No projects yet. Create your first one!</p>
+          </div>
+        ) : (
+          <div style={styles.projectList}>
+            {recentProjects.map((project) => {
+              const overdue = isOverdue(project.deadline, project.status);
+              return (
+                <div
+                  key={project.id}
+                  style={{
+                    ...styles.projectCard,
+                    ...(overdue ? styles.projectCardOverdue : {}),
+                  }}
+                >
+                  <div style={styles.projectCardTop}>
+                    <div>
+                      <div style={styles.projectNameRow}>
+                        <h4 style={styles.projectName}>{project.name}</h4>
+                        {overdue && <span style={styles.overdueTag}>Overdue</span>}
+                      </div>
+                      <p style={styles.projectAddress}>{project.address}</p>
+                    </div>
+                    <span
+                      style={{
+                        ...styles.badge,
+                        backgroundColor: STATUS_COLORS[project.status] + '22',
+                        color: STATUS_COLORS[project.status],
+                        border: `1px solid ${STATUS_COLORS[project.status]}44`,
+                      }}
+                    >
+                      {STATUS_LABELS[project.status] ?? project.status}
+                    </span>
+                  </div>
+
+                  <div style={styles.progressWrapper}>
+                    <div style={styles.progressHeader}>
+                      <span style={styles.progressLabel}>Progress</span>
+                      <span style={styles.progressValue}>{project.progress}%</span>
+                    </div>
+                    <div style={styles.progressTrack}>
+                      <div
+                        style={{
+                          ...styles.progressFill,
+                          width: `${project.progress}%`,
+                          backgroundColor: overdue ? '#EF4444' : '#E8863A',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={styles.projectMeta}>
+                    <span style={styles.metaText}>
+                      Deadline:{' '}
+                      <strong style={{ color: overdue ? '#EF4444' : 'var(--text-primary)' }}>
+                        {new Date(project.deadline).toLocaleDateString('en-GB')}
+                      </strong>
+                    </span>
+                    <span style={styles.metaText}>
+                      Members: <strong>{project.memberCount}</strong>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );
@@ -140,31 +261,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '16px',
     color: 'var(--text-secondary)',
   },
-  sectionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  },
-  sectionTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: 'var(--text-primary)',
-  },
-  newProjectButton: {
-    padding: '10px 20px',
-    fontSize: '14px',
-    fontWeight: '600',
-    backgroundColor: '#E8863A',
-    border: 'none',
-    borderRadius: '6px',
-    color: '#fff',
-    cursor: 'pointer',
-  },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
     gap: '24px',
+    marginBottom: '40px',
   },
   card: {
     backgroundColor: 'var(--bg-surface)',
@@ -187,6 +288,153 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardSubtitle: {
     fontSize: '14px',
+    color: 'var(--text-secondary)',
+  },
+  sectionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
+  },
+  sectionTitle: {
+    fontSize: '20px',
+    fontWeight: '600',
+    color: 'var(--text-primary)',
+    margin: 0,
+  },
+  sectionActions: {
+    display: 'flex',
+    gap: '16px',
+    alignItems: 'center',
+  },
+  viewAllLink: {
+    fontSize: '14px',
+    color: 'var(--accent)',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+  },
+  newProjectButton: {
+    padding: '10px 20px',
+    fontSize: '14px',
+    fontWeight: '600',
+    backgroundColor: '#E8863A',
+    border: 'none',
+    borderRadius: '6px',
+    color: '#fff',
+    cursor: 'pointer',
+  },
+  loadingText: {
+    color: 'var(--text-secondary)',
+    fontSize: '14px',
+  },
+  emptyState: {
+    backgroundColor: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px',
+    padding: '40px',
+    textAlign: 'center',
+  },
+  emptyText: {
+    color: 'var(--text-secondary)',
+    fontSize: '16px',
+    margin: 0,
+  },
+  projectList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  projectCard: {
+    backgroundColor: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px',
+    padding: '20px 24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  projectCardOverdue: {
+    borderColor: '#EF444444',
+    boxShadow: '0 0 0 1px #EF444422',
+  },
+  projectCardTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '12px',
+  },
+  projectNameRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  projectName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: 'var(--text-primary)',
+    margin: 0,
+  },
+  overdueTag: {
+    fontSize: '11px',
+    fontWeight: '600',
+    color: '#EF4444',
+    backgroundColor: '#EF444422',
+    border: '1px solid #EF444444',
+    borderRadius: '4px',
+    padding: '2px 6px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  projectAddress: {
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    margin: '4px 0 0',
+  },
+  badge: {
+    display: 'inline-block',
+    padding: '4px 10px',
+    borderRadius: '20px',
+    fontSize: '12px',
+    fontWeight: '600',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+  },
+  progressWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  progressHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  progressLabel: {
+    fontSize: '12px',
+    color: 'var(--text-secondary)',
+  },
+  progressValue: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: 'var(--text-primary)',
+  },
+  progressTrack: {
+    width: '100%',
+    height: '6px',
+    backgroundColor: 'var(--border)',
+    borderRadius: '3px',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: '3px',
+    transition: 'width 0.3s ease',
+  },
+  projectMeta: {
+    display: 'flex',
+    gap: '24px',
+  },
+  metaText: {
+    fontSize: '13px',
     color: 'var(--text-secondary)',
   },
 };
