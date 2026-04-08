@@ -12,6 +12,7 @@ import ResetPassword from './pages/ResetPassword';
 import Settings from './pages/Settings';
 import ConfirmEmail from './pages/ConfirmEmail';
 import NewProject from './pages/NewProject';
+import Projects from './pages/Projects';
 
 function App() {
   const theme = useThemeStore((state) => state.theme);
@@ -61,6 +62,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <Projects />
               </ProtectedRoute>
             }
           />

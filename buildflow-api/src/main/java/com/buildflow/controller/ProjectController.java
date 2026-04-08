@@ -11,12 +11,23 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
 public class ProjectController {
 
     private final ProjectService projectService;
+
+    @GetMapping
+    public ResponseEntity<List<ProjectResponse>> getProjects(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sortBy) {
+        List<ProjectResponse> response = projectService.getProjects(userDetails.getUsername(), status, sortBy);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(

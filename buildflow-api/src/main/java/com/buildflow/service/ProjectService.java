@@ -9,8 +9,12 @@ import com.buildflow.repository.ProjectMemberRepository;
 import com.buildflow.repository.ProjectRepository;
 import com.buildflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -54,6 +58,35 @@ public class ProjectService {
         int memberCount = projectMemberRepository.findByProjectId(project.getId()).size();
 
         return toResponse(project, memberCount);
+    }
+
+    public List<ProjectResponse> getProjects(String email, String status, String sortBy) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        var companyId = user.getCompany().getId();
+        Sort sort = buildSort(sortBy);
+
+        List<Project> projects;
+        if (status != null && !status.isBlank()) {
+            Project.ProjectStatus projectStatus = Project.ProjectStatus.valueOf(status.toUpperCase());
+            projects = projectRepository.findByCompanyIdAndStatus(companyId, projectStatus, sort);
+        } else {
+            projects = projectRepository.findByCompanyId(companyId, sort);
+        }
+
+        return projects.stream()
+                .map(p -> toResponse(p, projectMemberRepository.findByProjectId(p.getId()).size()))
+                .collect(Collectors.toList());
+    }
+
+    private Sort buildSort(String sortBy) {
+        if (sortBy == null) return Sort.by(Sort.Direction.DESC, "createdAt");
+        return switch (sortBy.toLowerCase()) {
+            case "deadline" -> Sort.by(Sort.Direction.ASC, "deadline");
+            case "progress" -> Sort.by(Sort.Direction.DESC, "progress");
+            default -> Sort.by(Sort.Direction.DESC, "createdAt");
+        };
     }
 
     private ProjectResponse toResponse(Project project, int memberCount) {
