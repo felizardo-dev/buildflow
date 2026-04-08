@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import ConfirmEmail from './pages/ConfirmEmail';
 import NewProject from './pages/NewProject';
 import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 
 function App() {
   const theme = useThemeStore((state) => state.theme);
@@ -78,6 +79,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <NewProject />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:id"
+            element={
+              <ProtectedRoute>
+                <ProjectDetail />
               </ProtectedRoute>
             }
           />
