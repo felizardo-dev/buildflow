@@ -151,9 +151,11 @@ export default function Projects() {
               return (
                 <div
                   key={project.id}
+                  onClick={() => navigate(`/projects/${project.id}`)}
                   style={{
                     ...styles.card,
                     ...(overdue ? styles.cardOverdue : {}),
+                    cursor: 'pointer',
                   }}
                 >
                   <div style={styles.cardTop}>

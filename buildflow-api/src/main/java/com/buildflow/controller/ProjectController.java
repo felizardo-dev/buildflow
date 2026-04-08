@@ -1,6 +1,7 @@
 package com.buildflow.controller;
 
 import com.buildflow.dto.CreateProjectRequest;
+import com.buildflow.dto.ProjectDetailResponse;
 import com.buildflow.dto.ProjectResponse;
 import com.buildflow.service.ProjectService;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/projects")
@@ -26,6 +28,14 @@ public class ProjectController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String sortBy) {
         List<ProjectResponse> response = projectService.getProjects(userDetails.getUsername(), status, sortBy);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProjectDetailResponse> getProjectById(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id) {
+        ProjectDetailResponse response = projectService.getProjectById(userDetails.getUsername(), id);
         return ResponseEntity.ok(response);
     }
 

@@ -20,6 +20,10 @@ public class GlobalExceptionHandler {
             status = HttpStatus.LOCKED;
         } else if (message != null && message.equals("Invalid email or password")) {
             status = HttpStatus.UNAUTHORIZED;
+        } else if (message != null && message.endsWith("not found")) {
+            status = HttpStatus.NOT_FOUND;
+        } else if (message != null && message.equals("Access denied")) {
+            status = HttpStatus.FORBIDDEN;
         }
 
         return ResponseEntity.status(status).body(Map.of("message", message != null ? message : "An error occurred"));

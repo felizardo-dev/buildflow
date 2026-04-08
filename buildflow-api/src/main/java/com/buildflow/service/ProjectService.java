@@ -1,6 +1,7 @@
 package com.buildflow.service;
 
 import com.buildflow.dto.CreateProjectRequest;
+import com.buildflow.dto.ProjectDetailResponse;
 import com.buildflow.dto.ProjectResponse;
 import com.buildflow.entity.Project;
 import com.buildflow.entity.ProjectMember;
@@ -13,7 +14,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -78,6 +81,56 @@ public class ProjectService {
         return projects.stream()
                 .map(p -> toResponse(p, projectMemberRepository.findByProjectId(p.getId()).size()))
                 .collect(Collectors.toList());
+    }
+
+    public ProjectDetailResponse getProjectById(String email, UUID projectId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        boolean isMember = projectMemberRepository.existsByProjectIdAndUserId(projectId, user.getId());
+        boolean isSameCompany = project.getCompany().getId().equals(user.getCompany().getId());
+
+        if (!isMember && !isSameCompany) {
+            throw new RuntimeException("Access denied");
+        }
+
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
+
+        List<ProjectDetailResponse.MemberDto> memberDtos = members.stream()
+                .map(m -> ProjectDetailResponse.MemberDto.builder()
+                        .id(m.getUser().getId().toString())
+                        .name(m.getUser().getName())
+                        .email(m.getUser().getEmail())
+                        .role(m.getRole())
+                        .avatarUrl(m.getUser().getAvatarUrl())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ProjectDetailResponse.builder()
+                .id(project.getId().toString())
+                .companyId(project.getCompany().getId().toString())
+                .name(project.getName())
+                .address(project.getAddress())
+                .latitude(project.getLatitude())
+                .longitude(project.getLongitude())
+                .status(project.getStatus().name())
+                .budget(project.getBudget())
+                .startDate(project.getStartDate())
+                .deadline(project.getDeadline())
+                .progress(project.getProgress())
+                .description(project.getDescription())
+                .photoUrl(project.getPhotoUrl())
+                .createdBy(project.getCreatedBy() != null ? project.getCreatedBy().getName() : null)
+                .memberCount(members.size())
+                .createdAt(project.getCreatedAt())
+                .updatedAt(project.getUpdatedAt())
+                .members(memberDtos)
+                .phases(Collections.emptyList())
+                .recentTasks(Collections.emptyList())
+                .build();
     }
 
     private Sort buildSort(String sortBy) {
